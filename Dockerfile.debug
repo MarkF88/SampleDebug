@@ -1,0 +1,33 @@
+FROM golang:1.16-buster AS build
+
+# Build Delve
+RUN go get github.com/go-delve/delve/cmd/dlv
+
+WORKDIR /app
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY *.go ./
+
+RUN go build -gcflags="all=-N -l" -o /sample-debug
+
+##
+## Deploy
+##
+
+FROM gcr.io/google-containers/ubuntu:14.04
+
+WORKDIR /
+
+COPY --from=build /go/bin/dlv /
+COPY --from=build /sample-debug /sample-debug
+COPY / / 
+
+EXPOSE 8080 40000
+
+
+
+CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/sample-debug"]
+
+

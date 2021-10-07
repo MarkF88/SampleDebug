@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample
+  labels:
+    app: sample
+spec:
+  type: LoadBalancer
+  ports:
+  - name: web
+    port: 82
+    targetPort: 8080
+  selector:
+    app: sample
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-debug
+  labels:
+    app: sample
+spec:
+  type: LoadBalancer
+  ports:
+  - name: debug
+    port: 40000
+    targetPort: 40000
+  selector:
+    app: sample
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sample
+  name: sample
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample
+  template:
+    metadata:
+      labels:
+        app: sample
+    spec:
+      containers:
+      - name: debug
+        image: registry.gitlab.com/marklfoley/vmw2021/sample-debug
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        - containerPort: 40000
